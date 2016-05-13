@@ -9,6 +9,7 @@ class Dictionary(models.Model):
 
 
 class Article(models.Model):
+    dictionary = models.ForeignKey(Dictionary)
     name = models.CharField(max_length=1024)
     body = models.TextField(blank=True)
 
