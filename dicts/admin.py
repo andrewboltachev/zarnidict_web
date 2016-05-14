@@ -10,3 +10,4 @@ class ArticleAdmin(VersionAdmin):
     pass
 
 admin.site.register(models.Article, ArticleAdmin)
+admin.site.register(models.Language)

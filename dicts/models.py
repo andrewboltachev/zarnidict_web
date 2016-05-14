@@ -2,8 +2,15 @@ from django.db import models
 from django.conf import settings
 
 
+class Language(models.Model):
+    iso_code = models.CharField(max_length=255, primary_key=True)
+    name = models.CharField(max_length=255)
+
+
 class Dictionary(models.Model):
     name = models.CharField(max_length=1024)
+    lang_in = models.ForeignKey(Language, related_name='lang_in')
+    lang_out = models.ForeignKey(Language, related_name='lang_out', null=True, blank=True)
     complete = models.BooleanField(default=False)
     structure = models.CharField(max_length=256)
     date_added = models.DateTimeField(auto_now_add=True)
