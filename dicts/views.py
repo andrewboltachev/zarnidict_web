@@ -3,13 +3,18 @@ from django.views.generic import View, TemplateView
 from django.views.decorators.csrf import csrf_exempt
 import json, datetime, re, urllib
 from django.http import HttpResponse
-from .models import Article, ArticleVersion, Dictionary
+from .models import Article, ArticleVersion, Dictionary, NullUser
 from django.core.paginator import Paginator
+from functools import reduce
 
 ITEMS_PER_PAGE = 20
 
 class OmUIView(TemplateView):
     template_name = 'om-ui.html'
+
+merge = lambda *d: dict(
+        reduce(lambda items1, items2: list(items1) + list(items2), map(lambda x: x.items(), d))
+        )
 
 dict_vals = lambda f, d: {k: f(v) for k, v in d.items()}
 model_to_dict = lambda x: dict(filter(lambda x: not x[0].startswith('_'), x.__dict__.items()))
@@ -62,12 +67,16 @@ class APIView(View):
         match = re.match(r'^/article/(\d+)$', url)
         if match:
             id = int(match.groups()[0])
-            revision = url_params.get('page', None)
+            revision = url_params.get('revision', None)
             revision = None if revision is None else int(revision)
 
             article = Article.objects.get(pk=id)
             article_version = article.articleversion_set.last() if revision is None else article.articleversion_set.get(pk=revision)
+            data['list'] = list(
+                    map(lambda x: merge(model_to_dict2(x), {'active': x == article_version, 'user': (x.user or NullUser).username}), article.articleversion_set.all())
+                    )
             data['name'] = article.name
+            data['id'] = article.id
             data['article'] = model_to_dict2(article_version)
             data['dictionary_id'] = article.dictionary.id
 

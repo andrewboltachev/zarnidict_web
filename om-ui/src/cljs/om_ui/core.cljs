@@ -415,13 +415,26 @@ _ (println ids1)
     ))
   )
 
+(def jsonp-ch (chan))
+
+(go-loop [old-value nil]
+         (let [[ch url params :as value] (<! jsonp-ch)]
+           (when (not= old-value value)
+             (jsonp ch url params)
+             )
+           (recur value)
+           )
+         )
+
 (def Root
   (reactClass
-    {:componentDidMount (fn [this]
+    {:getInitialState (fn [this]
+                       )
+     :componentDidMount (fn [this]
                      (go-loop
-                       []
+                       [last-data nil]
                        (let [[v port] (alts! [url-ch data-ch])]
-                         (println "v" v)
+                         ;(println "v" v)
                          (println "port" port)
                          (cond (= port url-ch)
                                (do
@@ -432,18 +445,28 @@ _ (println ids1)
                            (reactUpdateState
                              this
                              (fn [state]
-                               (jsonp data-ch "/api-view"
+                               (println "state change" (select-keys state [:url :url-params]) {:url path :url-params params})
+                               (let [existing-state (select-keys state [:url :url-params])]
+                               (if-not (or (= existing-state
+                                          {:url path :url-params params}
+                                          ) (empty? existing-state))
+                                 1 1
+                                 ; ..
+                                 )
+                                 (when (not= last-data v)
+                                   (println "last-data" last-data v)
+                               (put! jsonp-ch [data-ch "/api-view"
                                                      {:url v
                                                       :url-path path ; TODO use this!
                                                       :url-params params
                                                       :action "get"
-                                                      }
-                                                     )
+                                                      }]
+                                                     ))
                                (->
                                  state
                                  (assoc :url path)
                                  (assoc :url-params params)
-                                              )
+                                              ))
                                )
                              )
                            )))
@@ -459,7 +482,7 @@ _ (println ids1)
                                (js/myApp.hidePleaseWait)
                            )
                                )
-                           (recur)
+                           (recur (if (= port data-ch) v last-data))
                          )
                        )
                      (put! url-ch (str js/location.pathname js/location.search))
@@ -576,8 +599,28 @@ _ (println ids1)
                             }
 
 
-                (dom/div #js {:className "col-md-12"}
+                (dom/div #js {:className "col-md-8"}
                          (prn-str (-> data :article :body))
+                                
+                  )
+                (dom/div #js {:className "col-md-4"}
+                         (dom/h3 nil "Revisions:")
+                         (apply dom/ul nil
+                                 (map
+                                   (fn [{:keys [id active user date_added]}]
+                                     (let [text (str date_added " by " user)]
+                                       (dom/li nil
+                                     (if active
+                                       (dom/span nil
+                                                 text
+                                                 )
+                                             (dom/a #js {:href (str "/article/" (-> data :id) "?revision="
+                                                                    (-> data :article :id)
+                                                                    )} text)))
+                                       )
+                                     )
+                                   (:list data))
+                         )
                                 
                   ))
 
