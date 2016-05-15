@@ -400,7 +400,7 @@ _ (println ids1)
                            )
      :render
      (fn [t]
-       (let [scale (js->clj js/SCREEN4ARGUMENT_CHOICES)
+       (let [scale []
              
              {:keys [url data] :as state} (js->clj (.. t -state) :keywordize-keys true)]
 
