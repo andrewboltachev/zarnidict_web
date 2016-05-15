@@ -20,6 +20,26 @@
 
 (println "Hello world!")
 
+(defn parse-url [h]
+  "#/foo/bar/?a=b&c=d -> {:path \"/foo/bar\", :params {:a \"b\", :c \"d\"}}"
+  (let [
+      [path params] (string/split h #"\u003f")
+      params (if (some? params)
+               (into {} (map (comp
+                    (fn [[k v]] [(keyword (js/decodeURIComponent k))
+                                 (if v
+                                   (js/decodeURIComponent v)
+                                   v
+                                   )
+                                 ])
+                    #(string/split % "=")) (string/split params "&")))
+
+               )
+      ]
+    {:path path
+     :params params}
+    )
+  )
 
 (defn jsonp
   ([uri params] (jsonp (chan) uri params))
@@ -44,6 +64,46 @@
 
 
 ; UI building blocks
+
+
+(defn paginator [{:keys [page_number next_page_number previous_page_number first_page_number last_page_number] :as data}]
+  (println "data is" (keys data))
+  (dom/div #js {:style
+                #js {
+                     :marginTop 40
+                     :marginLeft "auto"
+                     :marginRight "auto"
+                     :textAlign "center"
+                     }}
+  (dom/div
+   #js
+   {:className "btn-toolbar1", :role "toolbar", :aria-label "..."}
+   (apply dom/div
+    #js
+    {:className "btn-group", :role "group", :aria-label "..."}
+     (map
+    (fn [[title number]]
+      (dom/a #js {:className "btn btn-default"
+                       :disabled (nil? number)
+                  :href (str (:url-path data) (if (= 1 number) "" (str "?page=" number)))
+                       ;:click
+                  #_(fn [e]
+                                (set! js/loaction (str (:url-path data) (if (= 1 number) "" ("?page=" number))))
+                                )
+                       }
+             title
+             ))
+       [
+        ["<<" first_page_number]
+        ["<" previous_page_number]
+        [page_number nil]
+        [">" next_page_number]
+        [">>" last_page_number]
+        ]
+             )
+     ))
+           )
+  )
 
 (defn column1 [attrs & children]
   ; TODO: attrs
@@ -361,22 +421,29 @@ _ (println ids1)
                          (println "v" v)
                          (println "port" port)
                          (cond (= port url-ch)
+                               (do
+                                 (println "url changed to" v)
                        (when v
-                         (let []
+                         (let [{:keys [path params]} (parse-url v)
+                               ]
                            (reactUpdateState
                              this
                              (fn [state]
                                (jsonp data-ch "/api-view"
                                                      {:url v
+                                                      :url-path path ; TODO use this!
+                                                      :url-params params
                                                       :action "get"
-                                                      :params []
                                                       }
                                                      )
-                               (assoc state :url v)
+                               (->
+                                 state
+                                 (assoc :url path)
+                                 (assoc :url-params params)
                                               )
                                )
                              )
-                           )
+                           )))
                                (= port data-ch)
                          (do
                                (reactUpdateState
@@ -405,18 +472,7 @@ _ (println ids1)
              {:keys [url data] :as state} (js->clj (.. t -state) :keywordize-keys true)]
 
 (dom/div nil
-(dom/button #js {:style #js {:position "fixed"
-:top 30
-:right 30} :className "btn btn-warning"
-:onClick (fn [_]
-(jsonp data-ch
-                                                                           "/api-view"
-                                                                           {:url url
-                                                                            :action "reset"
-                                                                            }
-                                                                           )
-)
-} "Reset")
+     (println "url" url)
                 (cond
                   (= url "/screen-4")
        (apply layout1 {:heading (:issue data)}
@@ -478,7 +534,39 @@ _ (println ids1)
                      }
                     )
 
-                  :else
+                  (re-matches #"/article/\d+" (or url ""))
+                  (layout1 {:heading (:name data)}
+
+                           (dom/button #js {:style #js {:position "fixed"
+:top 30
+:right 30} :className "btn btn-warning"
+:onClick (fn [_]
+(jsonp data-ch
+                                                                           "/api-view"
+                                                                           {:url url
+                                                                            :action "reset"
+                                                                            }
+                                                                           )
+)
+} "Reset")
+
+
+                (dom/div #js {:className "col-md-12"}
+                         (prn-str (:body data))
+                                
+                  ))
+
+                  (re-matches #"/\d+" (or url ""))
+                  (layout1 {:heading (:name data)}
+                (dom/div #js {:className "col-md-12"}
+                         (apply dom/ul nil
+                                 (map (fn [{:keys [id name]}] (dom/li nil (dom/a #js {:href (str "/article/" id)} name))) (:list data))
+                         )
+                         (paginator data)
+                                
+                  ))
+
+                  (= url "/")
        (layout1 {:heading "Index"}
                 ;(partition 3 3 []
                 (dom/div #js {:className "col-md-12"}
@@ -488,6 +576,15 @@ _ (println ids1)
                          )
                                 
                   ))
+                  :else
+(layout1 {:heading "Not found"}
+                (dom/div #js {:className "col-md-12"}
+                         (dom/a #js {:className ""
+                                     :href "/"}
+                                "Go to home page"
+                                )
+                  ))
+
                   )
                 )
        ))

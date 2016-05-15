@@ -26,6 +26,9 @@ class Article(models.Model):
     def __str__(self):
         return '{1} ({0})'.format(self.dictionary, self.name)  # TODO named params # TODO gettext
 
+    class Meta:
+        ordering = ['id', 'name']
+
 
 class NullUser(object):
     username = '(No user)'
