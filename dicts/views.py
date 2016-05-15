@@ -1,8 +1,13 @@
 from django.shortcuts import render
-from django.views.generic import View
+from django.views.generic import View, TemplateView
 from django.views.decorators.csrf import csrf_exempt
 import json
+from django.http import HttpResponse
 from .models import Article, ArticleVersion, Dictionary
+
+
+class OmUIView(TemplateView):
+    template_name = 'om-ui.html'
 
 
 class APIView(View):
