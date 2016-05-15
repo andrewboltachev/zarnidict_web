@@ -59,6 +59,22 @@ class APIView(View):
             data['page_number'] = page_no
             data['url-path'] = url
 
+        match = re.match(r'^/article/(\d+)$', url)
+        if match:
+            id = int(match.groups()[0])
+            revision = url_params.get('page', None)
+            revision = None if revision is None else int(revision)
+
+            article = Article.objects.get(pk=id)
+            article_version = article.articleversion_set.last() if revision is None else article.articleversion_set.get(pk=revision)
+            data['name'] = article.name
+            data['article'] = model_to_dict2(article_version)
+            data['dictionary_id'] = article.dictionary.id
+
+            for k, v in {'prev': '__lt', 'next': '__gt'}.items():
+                articles = article.dictionary.article_set.filter(**{'id' + v: article.id})
+                data[k] = model_to_dict2(articles[0]) if len(articles) else None
+
         """
             try:
                 if action == 'start-dict-upload':

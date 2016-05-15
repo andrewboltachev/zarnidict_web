@@ -117,7 +117,7 @@
 
 
 
-(defn layout1 [{:keys [heading] :as options} & children]
+(defn layout1 [{:keys [heading toolbar] :as options} & children]
 (dom/div nil ; main wraper
              (dom/div #js {
                            :style #js {
@@ -133,8 +133,11 @@
                     (dom/div
                       #js
                       {:className "row"}
-                      (dom/div #js {:className "col-md-12"}
+                      (dom/div #js {:className "col-md-6"}
                                 (dom/h2 nil heading))
+                      (dom/div #js {:className "col-md-6"}
+                                toolbar)
+                      
                         )
              )
                       (dom/div #js {:style #js {
@@ -535,24 +538,46 @@ _ (println ids1)
                     )
 
                   (re-matches #"/article/\d+" (or url ""))
-                  (layout1 {:heading (:name data)}
-
-                           (dom/button #js {:style #js {:position "fixed"
-:top 30
-:right 30} :className "btn btn-warning"
-:onClick (fn [_]
-(jsonp data-ch
-                                                                           "/api-view"
-                                                                           {:url url
-                                                                            :action "reset"
-                                                                            }
-                                                                           )
-)
-} "Reset")
+                  (layout1 {:heading (:name data)
+                            :toolbar
+                            (dom/div
+   #js
+   {:className "btn-toolbar pull-right", :role "toolbar", :aria-label "..."}
+   (apply dom/div
+    #js
+    {:className "btn-group", :role "group", :aria-label "..."}
+(dom/a #js {:className "btn btn-default"
+                  :href (str "/" (:dictionary_id data))
+                       }
+             "To dictionary"
+             )
+     (map
+    (fn [[title href]]
+      (dom/a #js {:className "btn btn-default"
+                       :disabled (nil? href)
+                  :href href
+                       }
+             title
+             ))
+                            (let [
+                                  
+        btn-fn (fn [k verb]
+                            
+                            (when-let [article (-> (get data k))] [(str verb ": " (-> article :name))
+                                               (str "/article/" (-> article :id))
+                                               ]))
+                                  ]
+       (filter identity [
+        (btn-fn :prev "Previous")
+        (btn-fn :next "Next")
+        ])
+             ))
+     ))
+                            }
 
 
                 (dom/div #js {:className "col-md-12"}
-                         (prn-str (:body data))
+                         (prn-str (-> data :article :body))
                                 
                   ))
 
