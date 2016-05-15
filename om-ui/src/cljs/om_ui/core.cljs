@@ -480,11 +480,14 @@ _ (println ids1)
 
                   :else
        (layout1 {:heading "Index"}
+                ;(partition 3 3 []
+                (dom/div #js {:className "col-md-12"}
+                           ;(prn-str (:echo data))
                          (apply dom/ul nil
-                                 (map (fn [[href title]] (dom/li nil (dom/a #js {:href href} title))) [["/screen-4" "Screen 4"] ["/screen-5" "Screen 5"]])
+                                 (map (fn [{:keys [id name]}] (dom/li nil (dom/a #js {:href (str "/" id)} name))) (:list data))
                          )
                                 
-                  )
+                  ))
                   )
                 )
        ))
