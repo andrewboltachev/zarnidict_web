@@ -10,12 +10,15 @@
                  [org.clojure/clojurescript "1.7.228"]
                  [figwheel-sidecar "0.5.0-3" :scope "test"]
                  [org.clojure/core.async "0.2.374"]
-                 [org.omcljs/om "1.0.0-alpha29-SNAPSHOT"]
+                 ;[org.omcljs/om "1.0.0-alpha29-SNAPSHOT"]
                  [ring "1.4.0"]
                  [compojure "1.4.0"]
                  [figwheel "0.5.0-3"]
                  [fogus/ring-edn "0.3.0"]
-                 [com.datomic/datomic-free "0.9.5344" :exclusions [joda-time]]]
+                 [com.datomic/datomic-free "0.9.5344" :exclusions [joda-time]]
+                 
+                 [kibu/pushy "0.3.6"]
+                 ]
 
   :plugins [[lein-cljsbuild "1.1.2"]
             [lein-figwheel "0.5.0-3"]]
