@@ -601,6 +601,10 @@ _ (println ids1)
 
                 (dom/div #js {:className "col-md-8"}
                          (let [body (-> data :article :body)
+f1 (fn [body]
+                            ; ...
+                            (doall (filter #(and (map? %) (= (:type %) :InputChar)) (tree-seq #(or (sequential? %) (map? %)) #((if (map? %) vals identity) %) body)))
+                            )
                                text
                            (cljs.reader/read-string
                            (or body "") ; FIXME "1st match" — what is it?
@@ -608,23 +612,28 @@ _ (println ids1)
                                is-composite (contains? text :original)
                                original (if is-composite (:original text) text)
                                examples (when is-composite (:examples text))
+                               original (-> original f1)
 
-                               a examples
+                               original (map (fn [x]
+                                               x
+                                               )
+                                             original)
+
+                               a (concat original examples)
+                               _ (prn original)
                                ]
                            (when body
                            (apply dom/ul #js {
                                               :style #js {
-                                                          :list-style "none"
+                                                          :listStyle "none"
                                                           :padding 0
                                                           }
                                               }
                                   (map
                                     (fn [line]
                                       ; ...
-                                      (cond
-                                        ; TODO
-                                        :else
-                                        (let [{:keys [mhr aut rus]} line
+                                      (let [
+
                                               span1 (fn [props & children] (apply dom/span
                                                                                   (clj->js (merge (js->clj props) {:style {:lineHeight "27px"
                                                                                                                            :padding 5 :borderRadius 5}})) children))]
@@ -634,12 +643,32 @@ _ (println ids1)
                                                           }
                                               }
                                               (dom/div #js {:className "well well-sm"}
-                                              (span1 #js {:className " bg-danger"} (apply str mhr))
+                                      (cond
+                                        (contains? line :type)
+                                        (apply span1 nil
+                                               (map (fn [x]
+                                                                 (if (string? x) (span1 #js {
+                                                                                  :className ({"pre" "bg-warning"} (:value line))
+                                                                                  } x)
+                                                                   (span1 #js {
+                                                                                  :className ({"p" "bg-info"} (:tag x))
+                                                                                  } (-> x :value first))
+                                                                   )
+                                                      )
+                                                 (:payload line)
+                                                               )
+                                               )
+
+                                        :else
+                                        (let [{:keys [mhr aut rus]} line
+                                              ]
+                                          
+                                              [(span1 #js {:className " bg-danger"} (apply str mhr))
                                               (when aut (span1 #js {:className "bg-warning"} (apply str aut)))
-                                              (span1 #js {:className "bg-info"} (apply str rus))
+                                              (span1 #js {:className "bg-info"} (apply str rus))]
                                                        )
                                               )
-                                      )))
+                                      ))))
                                      a)
                                    ))
                            )
