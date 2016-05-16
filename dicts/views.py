@@ -73,7 +73,7 @@ class APIView(View):
 
             article = Article.objects.get(pk=id)
             if action == "set":
-                ArticleVersion.objects.create(article=article, body=request.POST['payload'], user=request.user)
+                ArticleVersion.objects.create(article=article, body=request.POST['payload'], user=request.user if request.user.is_authenticated() else None)
                 data['url_to_set'] = url
             article_version = article.articleversion_set.last() if revision is None else article.articleversion_set.all().get(pk=revision)
             data['list'] = list(
