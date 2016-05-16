@@ -600,7 +600,49 @@ _ (println ids1)
 
 
                 (dom/div #js {:className "col-md-8"}
-                         (prn-str (-> data :article :body))
+                         (let [body (-> data :article :body)
+                               text
+                           (cljs.reader/read-string
+                           (or body "") ; FIXME "1st match" — what is it?
+                             )
+                               is-composite (contains? text :original)
+                               original (if is-composite (:original text) text)
+                               examples (when is-composite (:examples text))
+
+                               a examples
+                               ]
+                           (when body
+                           (apply dom/ul #js {
+                                              :style #js {
+                                                          :list-style "none"
+                                                          :padding 0
+                                                          }
+                                              }
+                                  (map
+                                    (fn [line]
+                                      ; ...
+                                      (cond
+                                        ; TODO
+                                        :else
+                                        (let [{:keys [mhr aut rus]} line
+                                              span1 (fn [props & children] (apply dom/span
+                                                                                  (clj->js (merge (js->clj props) {:style {:lineHeight "27px"
+                                                                                                                           :padding 5 :borderRadius 5}})) children))]
+                                      (dom/li  #js {
+                                              :style #js {
+                                                          :margin 0
+                                                          }
+                                              }
+                                              (dom/div #js {:className "well well-sm"}
+                                              (span1 #js {:className " bg-danger"} (apply str mhr))
+                                              (when aut (span1 #js {:className "bg-warning"} (apply str aut)))
+                                              (span1 #js {:className "bg-info"} (apply str rus))
+                                                       )
+                                              )
+                                      )))
+                                     a)
+                                   ))
+                           )
                                 
                   )
                 (dom/div #js {:className "col-md-4"}
