@@ -427,7 +427,8 @@ _ (println ids1)
 (def jsonp-ch (chan))
 
 (go-loop [old-value nil]
-         (let [[ch url params :as value] (<! jsonp-ch)]
+         (let [[ch url params :as value] (<! jsonp-ch)
+               ]
            (when (not= old-value value)
              (jsonp ch url params)
              )
@@ -462,7 +463,7 @@ _ (println ids1)
                                  1 1
                                  ; ..
                                  )
-                                 (when (not= last-data v)
+                                 (when (and (not= last-data v) (not (contains? last-data :url_to_set)))
                                    (println "last-data" last-data v)
                                (put! jsonp-ch [data-ch "/api-view"
                                                      {:url v
