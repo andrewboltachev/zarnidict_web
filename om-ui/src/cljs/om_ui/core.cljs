@@ -254,9 +254,14 @@
       {:render (fn [this]
                  (let [{:keys [id text connectDropTarget connectDragSource]} (js->clj (.. this -props) :keywordize-keys true)]
                    (->
-                   (dom/li #js {:data-id id}
-                           text
+                   (apply dom/li #js {
+                                :style #js {
+                                            :margin 0
+                                            }
+                                }
+                           (.. this -props -children)
                     )
+
                      connectDropTarget
                      connectDragSource)
                    )
@@ -286,6 +291,7 @@
 
 
 (defn swap [v i1 i2]
+  (println "i1" i1)
    (assoc v i2 (get v i1) i1 (get v i2)))
 
 
@@ -294,7 +300,25 @@
    (js/DragDropContext js/HTML5Backend)
   (reactClass
     {:moveCard (fn [this dragIndex hoverIndex]
-                 (println "moveCard" dragIndex hoverIndex)
+                 (let [v (swap
+                                       (->
+                                         (js->clj (.. this -props) :keywordize-keys true)
+                                               :data :a
+                                               ) dragIndex hoverIndex
+                                       )]
+                 (println "moveCard" v)
+                   (jsonp data-ch
+                                                                           "/api-view"
+                                                                           {:url js/location.pathname ; TODO !!!
+                                                                            :action "set"
+                                                                            :payload (prn-str v)
+                                                                            }
+                                                                           )
+                   )
+                 ; ...
+
+
+                 (comment
                  #_(.setState this
 
                             )
@@ -311,7 +335,7 @@ ids1 (swap ids1 (first-pos dragIndex ids1)
 _ (println ids1)
 ]
 
-(jsonp data-ch
+#_(jsonp data-ch
                                                                            "/api-view"
                                                                            {:url "/screen-5"
                                                                             :action "set"
@@ -323,9 +347,10 @@ _ (println ids1)
                                                                             }
                                                                            )
         ))
+                 )
                                     
      :render (fn [this]
-                  (let [{:keys [arguments1 arguments2] :as data} (-> (.. this -props) (js->clj :keywordize-keys true) :data)]
+                  (let [{:keys [a] :as data} (-> (.. this -props) (js->clj :keywordize-keys true) :data)]
 
 
 
@@ -333,84 +358,68 @@ _ (println ids1)
 
 
 
-                  (layout1 {:heading (:issue data)}
-                (dom/div #js {:className "col-md-6"}
-                (dom/h4 #js {:style #js {:marginBottom 30}} "Rank each of the arguments below relating to this proposal:")
-(apply dom/ul #js {:id "sortable1"}
-                        (map-indexed (fn [& [i {:keys [id text]}]]
-                               (reactElement
+(apply dom/ul #js {
+                                              :style #js {
+                                                          :listStyle "none"
+                                                          :padding 0
+                                                          }
+                                              }
+                               
+                                  (map-indexed (fn [i line]
+                                      ; ...
+                                      (let [
+
+                                              span1 (fn [props & children] (apply dom/span
+                                                                                  (clj->js (merge (js->clj props) {:style {:lineHeight "27px"
+                                                                                                                           :padding 5 :borderRadius 5}})) children))]
+
+(reactElement
                                  Card
-                                 {:key id
-                                  :index id
-                                  :id id
-                                  :text text
+                                 {:key i
+                                  :index i
+                                  :id i
+                                  ;:data item
                                   :moveCard (.. this -moveCard)
                                   }
-                                 )
-                               )
-                             arguments1
-                             )
-                         )
-                         )
-                (dom/div #js {:className "col-md-6 "}
+                                              [(dom/div #js {:className "well well-sm"}
+                                      (cond
+                                        (contains? line :type)
+                                        (apply span1 nil
+                                               (map (fn [x]
+                                                                 (if (string? x) (span1 #js {
+                                                                                  :className ({"pre" "bg-warning"} (:value line))
+                                                                                  } x)
+                                                                   (span1 #js {
+                                                                                  :className ({"p" "bg-info"} (:tag x))
+                                                                                  } (-> x :value first))
+                                                                   )
+                                                      )
+                                                 (:payload line)
+                                                               )
+                                               )
 
-(dom/div #js {:className ""
-              :style #js {
-                      :backgroundColor "#434343"
-                          :padding 15
-                          :marginBottom 15
-                      }}                
-(dom/div #js {:className ""
-              :style #js {
-                          :color "white"
-                          :fontSize 20
-                          :marginBottom 30
-                      }}                
-(dom/span nil "Drag good arguments here:")
-(dom/br nil)
-(dom/span nil "(put stronger arguments higher up)")
-         )
-
-(apply dom/ul #js {:id "sortable2"}
-                        (map (fn [{:keys [id text]}]
-                               (dom/li #js {:data-id id}
-                                       text
-                                )
-                               )
-                             arguments2
-                             )
-                         )
-(dom/div #js {:className "clearfix"})
-                         )
-                         
-(dom/div #js {:className ""
-              :style #js {
-                      :backgroundColor "#f4cccc"
-                          :padding 15
-                      }}                
-
-(dom/div #js {:className ""
-              :style #js {
-                          :color "black"
-                          :fontSize 20
-                          :marginBottom 30
-                      }}                
-(dom/span nil "Drag bad or irrelevant arguments here")
-(dom/span #js {:className "glyphicon glyphicon-trash"
-               :style #js {:paddingLeft 15}})
-(dom/ul #js {:id "sortable3"}
-                        
-                         )
-         )
+                                        :else
+                                        (let [{:keys [mhr aut rus]} line
+                                              ]
+                                          
+                                              [(span1 #js {:className " bg-danger"} (apply str mhr))
+                                              (when aut (span1 #js {:className "bg-warning"} (apply str aut)))
+                                              (span1 #js {:className "bg-info"} (apply str rus))]
+                                                       )
+                                              )
+                                      )]
+     )))
+                                     a)
+                                   )
 
 
 
-(dom/div #js {:className "clearfix"})
-                         )
-                
 
 
-               ))))
+
+
+
+                  ))
      }
     ))
   )
@@ -475,7 +484,16 @@ _ (println ids1)
                                (reactUpdateState
                                  this
                                  (fn [state]
-                                   (assoc state :data (js/JSON.parse v))
+                                   (let [data (js->clj (js/JSON.parse v) :keywordize-keys true)
+                                         url_to_set (:url_to_set data)
+                                         data (dissoc data :url_to_set)
+                                         ]
+                                     (when url_to_set
+                                       (println "will set url" url_to_set)
+                                       (pushy/set-token! history url_to_set)
+                                       )
+                                     (assoc state :data (clj->js data))
+                                     )
                                    )
                                  )
                            ;(setup-sortable this)
@@ -500,65 +518,6 @@ _ (println ids1)
 (dom/div nil
      (println "url" url)
                 (cond
-                  (= url "/screen-4")
-       (apply layout1 {:heading (:issue data)}
-
-
-                (dom/div #js {:className ""}
-                (dom/h4 #js {:style #js {:marginBottom 30}} "Rate each of the arguments below relating to this proposal:")
-                         )
-                (map (fn [{:keys [id text value] :as argument}]
-                (dom/div #js {:className "row"
-                              :style #js {:marginBottom 30}}
-                         (dom/div #js {:className "col-md-4"}
-                         #_(dom/textarea #js {:className "form-control" :disabled true
-                                            :value text
-                                            })
-                         (dom/div #js {:className "well"
-                                            } text)
-                         )
-                (dom/div #js {:className "col-md-2"}
-                         (dom/select #js {:className "form-control" :disabled true}
-                                  (dom/option #js {:value true} "Supporting")
-                                  )
-                         )
-                (dom/div #js {:className "col-md-6"}
-                         (apply dom/div #js {:className "row"
-                                       :style #js {}}
-                                  (map
-                                    (fn [[value1 option]]
-                                      (let [htmlId (str id "_" value1)]
-                                    (dom/div #js {:className "col-md-2"}
-                                    (dom/label #js {:className "" :htmlFor htmlId} option)
-                                    (dom/div #js {:className ""}
-                                             (dom/input #js {:type "radio" :name htmlId :id htmlId ; TODO
-                                                             :checked (= value value1)
-                                                             :onChange (fn [e]
-                                                                         (jsonp data-ch
-                                                                           "/api-view"
-                                                                           {:url "/screen-4"
-                                                                            :action "set"
-                                                                            :params {:id id :value value1}}
-                                                                           )
-                                                                         false
-                                                                         )
-                                                             }
-                                             )
-                                             ))
-                                    ))
-                                scale)
-                                  )
-                         ))) (:arguments data))
-                         )
-                                
-
-                  (= url "/screen-5")
-                  (reactElement
-                    LayoutWithDragAndDrop
-                    {
-                     :data data
-                     }
-                    )
 
                   (re-matches #"/article/\d+" (or url ""))
                   (layout1 {:heading (:name data)
@@ -612,7 +571,7 @@ f1 (fn [body]
                                is-composite (contains? text :original)
                                original (if is-composite (:original text) text)
                                examples (when is-composite (:examples text))
-                               original (-> original f1)
+                               original (if is-composite (-> original f1) original)
 
                                original (map (fn [x]
                                                x
@@ -623,54 +582,9 @@ f1 (fn [body]
                                _ (prn original)
                                ]
                            (when body
-                           (apply dom/ul #js {
-                                              :style #js {
-                                                          :listStyle "none"
-                                                          :padding 0
-                                                          }
-                                              }
-                                  (map
-                                    (fn [line]
-                                      ; ...
-                                      (let [
-
-                                              span1 (fn [props & children] (apply dom/span
-                                                                                  (clj->js (merge (js->clj props) {:style {:lineHeight "27px"
-                                                                                                                           :padding 5 :borderRadius 5}})) children))]
-                                      (dom/li  #js {
-                                              :style #js {
-                                                          :margin 0
-                                                          }
-                                              }
-                                              (dom/div #js {:className "well well-sm"}
-                                      (cond
-                                        (contains? line :type)
-                                        (apply span1 nil
-                                               (map (fn [x]
-                                                                 (if (string? x) (span1 #js {
-                                                                                  :className ({"pre" "bg-warning"} (:value line))
-                                                                                  } x)
-                                                                   (span1 #js {
-                                                                                  :className ({"p" "bg-info"} (:tag x))
-                                                                                  } (-> x :value first))
-                                                                   )
-                                                      )
-                                                 (:payload line)
-                                                               )
-                                               )
-
-                                        :else
-                                        (let [{:keys [mhr aut rus]} line
-                                              ]
-                                          
-                                              [(span1 #js {:className " bg-danger"} (apply str mhr))
-                                              (when aut (span1 #js {:className "bg-warning"} (apply str aut)))
-                                              (span1 #js {:className "bg-info"} (apply str rus))]
-                                                       )
-                                              )
-                                      ))))
-                                     a)
-                                   ))
+                             ; ...
+                             (reactElement LayoutWithDragAndDrop {:data {:a a}})
+                           )
                            )
                                 
                   )
@@ -686,7 +600,7 @@ f1 (fn [body]
                                                  text
                                                  )
                                              (dom/a #js {:href (str "/article/" (-> data :id) "?revision="
-                                                                    (-> data :article :id)
+                                                                    id
                                                                     )} text)))
                                        )
                                      )

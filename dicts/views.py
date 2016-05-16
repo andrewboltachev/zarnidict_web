@@ -69,11 +69,15 @@ class APIView(View):
             id = int(match.groups()[0])
             revision = url_params.get('revision', None)
             revision = None if revision is None else int(revision)
+            print("revision", revision)
 
             article = Article.objects.get(pk=id)
-            article_version = article.articleversion_set.last() if revision is None else article.articleversion_set.get(pk=revision)
+            if action == "set":
+                ArticleVersion.objects.create(article=article, body=request.POST['payload'], user=request.user)
+                data['url_to_set'] = url
+            article_version = article.articleversion_set.last() if revision is None else article.articleversion_set.all().get(pk=revision)
             data['list'] = list(
-                    map(lambda x: merge(model_to_dict2(x), {'active': x == article_version, 'user': (x.user or NullUser).username}), article.articleversion_set.all())
+                    map(lambda x: merge(model_to_dict2(x), {'active': x == article_version, 'user': (x.user or NullUser).username, 'body': None}), article.articleversion_set.all())
                     )
             data['name'] = article.name
             data['id'] = article.id
