@@ -565,9 +565,13 @@ f1 (fn [body]
                             (doall (filter #(and (map? %) (= (:type %) :InputChar)) (tree-seq #(or (sequential? %) (map? %)) #((if (map? %) vals identity) %) body)))
                             )
                                text
-                           (cljs.reader/read-string
+                           (try
+                             (cljs.reader/read-string
                            (or body "") ; FIXME "1st match" — what is it?
                              )
+                             (catch js/Exception e
+                               []
+                               ))
                                is-composite (contains? text :original)
                                original (if is-composite (:original text) text)
                                examples (when is-composite (:examples text))
