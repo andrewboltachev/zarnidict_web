@@ -570,7 +570,7 @@ f1 (fn [body]
                              (cljs.reader/read-string
                            (or body "") ; FIXME "1st match" — what is it?
                              )
-                             (catch js/Exception e
+                             (catch js/Error e
                                []
                                ))
                                is-composite (contains? text :original)
